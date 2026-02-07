@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  PROVIDER
+  ADMIN
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  password        String
+  role            Role      @default(CUSTOMER)
+  verified        Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  providedService Service[]
+  customerRequests Request[] @relation("CustomerRequests")
+  providerRequests Request[] @relation("ProviderRequests")
+  customerReviews Review[]   @relation("CustomerReviews")
+  providerReviews Review[]   @relation("ProviderReviews")
+  sentMessages    Message[]  @relation("SentMessages")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  services    Service[]
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  providerId  String
+  categoryId  String
+  title       String
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  provider    User     @relation(fields: [providerId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id])
+}
+
+model Request {
+  id          String        @id @default(cuid())
+  customerId  String
+  providerId  String?
+  status      RequestStatus @default(PENDING)
+  title       String
+  description String
+  category    String
+  location    String
+  imageUrls   String[]
+  schedule    DateTime
+  createdAt   DateTime      @default(now())
+  customer    User          @relation("CustomerRequests", fields: [customerId], references: [id])
+  provider    User?         @relation("ProviderRequests", fields: [providerId], references: [id])
+  payment     Payment?
+  messages    Message[]
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  requestId      String        @unique
+  amount         Decimal       @db.Decimal(10, 2)
+  status         PaymentStatus @default(PENDING)
+  transactionId  String?
+  createdAt      DateTime      @default(now())
+  request        Request       @relation(fields: [requestId], references: [id])
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  customerId  String
+  providerId  String
+  rating      Int
+  comment     String
+  createdAt   DateTime @default(now())
+  customer    User     @relation("CustomerReviews", fields: [customerId], references: [id])
+  provider    User     @relation("ProviderReviews", fields: [providerId], references: [id])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  requestId  String
+  senderId   String
+  text       String
+  createdAt  DateTime @default(now())
+  request    Request  @relation(fields: [requestId], references: [id])
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+}
