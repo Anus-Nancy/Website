@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-gradient-to-br from-brand-50 to-white text-slate-800;
+}
+
+.card {
+  @apply rounded-2xl border border-white/40 bg-white/70 p-6 shadow-soft backdrop-blur;
+}
